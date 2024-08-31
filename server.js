@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT;
-console.log(port);
+// console.log(port);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -80,4 +80,5 @@ app.get('/api/scores', async (req, res) => {
     res.status(500).send('Error fetching scores');
   }
 });
-app.listen(port, () => console.log(`Server running on port ${port}`));
+
+// app.listen(port, () => console.log(`Server running on port ${port}`));
