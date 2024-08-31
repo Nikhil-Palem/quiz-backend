@@ -1,23 +1,37 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const { Pool } = require('pg');
+const bodyParser = require('body-parser'); 
+const { Pool } = require('pg'); 
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+const port = process.env.PORT;
+console.log(port);
 
-// PostgreSQL connection
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+app.use(cors({
+    origin: 'https://quiz-game-frontend-zeta.vercel.app', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true 
+}));
+
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
+  connectionString: process.env.POSTGRES_URL,
+})
+pool.connect((err)=>{
+    if(err) throw err
+    console.log("Connect to postgreSQL Successfull");
 });
 
-// Route to fetch quiz questions
+app.get("/",(req,res)=>{
+  res.send("server is running");
+})
+
+
 app.get('/api/quiz', async (req, res) => {
   const fetchQuestions = async (retries = 3) => {
     try {
@@ -26,7 +40,7 @@ app.get('/api/quiz', async (req, res) => {
     } catch (error) {
       if (error.response?.status === 429 && retries > 0) {
         console.log('Rate limited, retrying...');
-        await new Promise(res => setTimeout(res, 2000)); // Wait for 2 seconds before retrying
+        await new Promise(res => setTimeout(res, 2000));
         return fetchQuestions(retries - 1);
       } else {
         throw error;
@@ -58,8 +72,6 @@ app.post('/api/scores', async (req, res) => {
   }
 });
 
-
-// Route to get all scores
 app.get('/api/scores', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM scores ORDER BY score DESC ');
@@ -68,6 +80,4 @@ app.get('/api/scores', async (req, res) => {
     res.status(500).send('Error fetching scores');
   }
 });
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(port, () => console.log(`Server running on port ${port}`));
